@@ -7,7 +7,7 @@ module Attractor
                     :output_truncation_chars, :loop_detection_window,
                     :loop_detection_threshold, :model, :provider,
                     :temperature, :max_tokens, :enable_steering,
-                    :project_doc_globs
+                    :project_doc_globs, :message_window_size
 
       def initialize(**opts)
         @max_turns = opts.fetch(:max_turns, 100)
@@ -24,6 +24,10 @@ module Attractor
         @project_doc_globs = opts.fetch(:project_doc_globs, %w[
                                           CLAUDE.md .claude/instructions.md README.md
                                         ])
+        # Message window: keep last N turns in API requests to prevent unbounded growth
+        # Each turn = 3 messages (user, assistant, tool_results)
+        # Default 10 turns = 30 messages = ~100k tokens max
+        @message_window_size = opts.fetch(:message_window_size, 10)
       end
     end
   end

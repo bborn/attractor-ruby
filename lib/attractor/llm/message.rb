@@ -42,6 +42,22 @@ module Attractor
         new(role: :system, content: text)
       end
 
+      def to_h
+        {
+          role: role,
+          content: content.map(&:to_h)
+        }
+      end
+
+      def self.from_h(hash)
+        # Handle both string and symbol keys (JSON round-trip)
+        hash = hash.transform_keys(&:to_sym)
+        new(
+          role: hash[:role].to_sym,  # Convert role to symbol
+          content: hash[:content].map { |c| ContentPart.from_h(c) }
+        )
+      end
+
       private
 
       def normalize_content(content)

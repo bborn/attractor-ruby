@@ -40,6 +40,19 @@ module Attractor
         }
       end
 
+      def self.from_h(hash)
+        return ZERO if hash.nil? || hash.empty?
+        # Handle both string and symbol keys (JSON round-trip)
+        hash = hash.transform_keys(&:to_sym)
+        new(
+          input_tokens: hash[:input_tokens] || 0,
+          output_tokens: hash[:output_tokens] || 0,
+          cache_read_tokens: hash[:cache_read_tokens] || 0,
+          cache_write_tokens: hash[:cache_write_tokens] || 0,
+          reasoning_tokens: hash[:reasoning_tokens] || 0
+        )
+      end
+
       ZERO = new.freeze
     end
   end

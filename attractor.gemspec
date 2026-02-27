@@ -20,9 +20,7 @@ Gem::Specification.new do |spec|
   spec.metadata['bug_tracker_uri'] = "#{spec.metadata['source_code_uri']}/issues"
   spec.metadata['rubygems_mfa_required'] = 'true'
 
-  spec.files = Dir['lib/**/*.rb', 'bin/*', 'LICENSE']
-  spec.bindir = 'bin'
-  spec.executables = ['attractor']
+  spec.files = Dir['lib/**/*.rb', 'LICENSE']
   spec.require_paths = ['lib']
 
   spec.add_dependency 'concurrent-ruby', '~> 1.3'

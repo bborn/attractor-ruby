@@ -52,15 +52,53 @@ module Attractor
         end
 
         def build_body(request)
+          messages = request.messages.reject { |m| m.role == :system }.map { |m| serialize_message(m) }
+
+          # Mark recent conversation for caching (last few turns before current request)
+          # This caches accumulated tool results and conversation history
+          if messages.length >= 4
+            # Find the second-to-last user message and mark it for caching
+            # This ensures we cache all previous turns while keeping current turn fresh
+            user_message_indices = messages.each_with_index.select { |m, _| m['role'] == 'user' }.map { |_, i| i }
+            if user_message_indices.length >= 2
+              cache_index = user_message_indices[-2]  # Second-to-last user message
+              last_content = messages[cache_index]['content']
+              if last_content.is_a?(Array) && !last_content.empty?
+                last_content[-1]['cache_control'] = { 'type' => 'ephemeral' }
+              end
+            end
+          end
+
           body = {
             'model' => request.model,
-            'messages' => request.messages.reject { |m| m.role == :system }.map { |m| serialize_message(m) },
+            'messages' => messages,
             'max_tokens' => request.max_tokens || 4096
           }
-          body['system'] = request.system if request.system
+
+          # Enable prompt caching for system prompt
+          if request.system
+            body['system'] = [
+              {
+                'type' => 'text',
+                'text' => request.system,
+                'cache_control' => { 'type' => 'ephemeral' }
+              }
+            ]
+          end
+
           body['temperature'] = request.temperature if request.temperature
           body['stop_sequences'] = request.stop_sequences if request.stop_sequences
-          body['tools'] = request.tools.map { |t| serialize_tool(t) } if request.tools&.any?
+
+          # Enable prompt caching for tools
+          if request.tools&.any?
+            tools = request.tools.map { |t| serialize_tool(t) }
+            # Mark the last few tools for caching (cache the whole tool block)
+            if tools.length > 3
+              tools[-1]['cache_control'] = { 'type' => 'ephemeral' }
+            end
+            body['tools'] = tools
+          end
+
           body['tool_choice'] = serialize_tool_choice(request.tool_choice) if request.tool_choice
           body
         end

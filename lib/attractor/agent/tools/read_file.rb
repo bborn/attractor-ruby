@@ -22,7 +22,7 @@ module Attractor
           )
         end
 
-        def call(args, env:)
+        def call(args, env:, config: nil)
           content = env.read_file(args['path'])
           if args['offset'] || args['limit']
             lines = content.lines
@@ -30,7 +30,8 @@ module Attractor
             limit = args['limit'] || lines.length
             content = lines[offset, limit]&.join || ''
           end
-          Truncation.truncate(content)
+          max_chars = config&.output_truncation_chars || 10_000
+          Truncation.truncate(content, max_chars: max_chars)
         end
       end
     end

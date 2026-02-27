@@ -21,13 +21,14 @@ module Attractor
           )
         end
 
-        def call(args, env:)
+        def call(args, env:, config: nil)
           result = env.execute_command(args['command'], timeout: args['timeout'] || 120)
           output = +''
           output << result[:stdout] unless result[:stdout].empty?
           output << "\nSTDERR:\n#{result[:stderr]}" unless result[:stderr].empty?
           output << "\nExit code: #{result[:exit_code]}"
-          Truncation.truncate(output)
+          max_chars = config&.output_truncation_chars || 10_000
+          Truncation.truncate(output, max_chars: max_chars)
         end
       end
     end
