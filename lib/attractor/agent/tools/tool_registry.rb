@@ -18,9 +18,13 @@ module Attractor
           @tools[name]
         end
 
-        def execute(name, arguments, env:)
+        def execute(name, arguments, env:, config: nil)
           tool = @tools[name] || raise(ToolExecutionError, "Unknown tool: #{name}")
-          tool.call(arguments, env: env)
+          if tool.method(:call).parameters.any? { |type, pname| pname == :config }
+            tool.call(arguments, env: env, config: config)
+          else
+            tool.call(arguments, env: env)
+          end
         end
 
         def to_llm_tools

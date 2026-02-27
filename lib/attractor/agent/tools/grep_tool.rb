@@ -23,7 +23,7 @@ module Attractor
           )
         end
 
-        def call(args, env:)
+        def call(args, env:, config: nil)
           result = env.grep(
             args['pattern'],
             path: args['path'],
@@ -32,7 +32,8 @@ module Attractor
               case_insensitive: args['case_insensitive']
             }
           )
-          Truncation.truncate(result)
+          max_chars = config&.output_truncation_chars || 10_000
+          Truncation.truncate(result, max_chars: max_chars)
         end
       end
     end

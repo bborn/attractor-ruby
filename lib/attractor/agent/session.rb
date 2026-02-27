@@ -62,12 +62,53 @@ module Attractor
         @steering_queue << content
       end
 
+      # Serialize session state for persistence across requests
+      def to_state
+        {
+          messages: @messages.map(&:to_h),
+          usage: @usage.to_h,
+          turn_count: @turn_count,
+          steering_queue: @steering_queue
+        }
+      end
+
+      # Restore session from serialized state
+      def self.from_state(state, client:, config:, env:, profile: nil)
+        session = new(client: client, config: config, env: env, profile: profile)
+
+        # Handle both string and symbol keys (JSON round-trip)
+        state = state.transform_keys(&:to_sym)
+
+        # Restore messages
+        session.instance_variable_set(:@messages,
+          state[:messages].map { |m| LLM::Message.from_h(m) }
+        )
+
+        # Restore usage
+        session.instance_variable_set(:@usage, LLM::Usage.from_h(state[:usage]))
+
+        # Restore turn count and steering
+        session.instance_variable_set(:@turn_count, state[:turn_count])
+        session.instance_variable_set(:@steering_queue, state[:steering_queue])
+
+        session
+      end
+
       private
 
       def call_llm
+        # Apply sliding window to prevent unbounded message growth
+        # Keep last N turns (each turn = ~3 messages: user, assistant, tool_results)
+        window_size = config.message_window_size * 3
+        messages_to_send = if @messages.length > window_size
+                             @messages.last(window_size)
+                           else
+                             @messages
+                           end
+
         request = LLM::Request.new(
           model: config.model,
-          messages: @messages,
+          messages: messages_to_send,
           system: @system_prompt,
           tools: @registry.to_llm_tools,
           temperature: config.temperature,
@@ -88,7 +129,7 @@ module Attractor
           end
 
           result = begin
-            @registry.execute(tc.name, tc.input, env: @env)
+            @registry.execute(tc.name, tc.input, env: @env, config: @config)
           rescue StandardError => e
             @events.emit(:error, { tool: tc.name, error: e.message })
             "Error: #{e.message}"
