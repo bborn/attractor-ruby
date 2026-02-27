@@ -28,7 +28,6 @@ require_relative 'attractor/llm/generate'
 # Layer 2: Coding Agent Loop
 require_relative 'attractor/agent/execution_env/base'
 require_relative 'attractor/agent/execution_env/local'
-require_relative 'attractor/agent/execution_env/sprite'
 require_relative 'attractor/agent/truncation'
 require_relative 'attractor/agent/tools/tool_registry'
 require_relative 'attractor/agent/tools/read_file'
