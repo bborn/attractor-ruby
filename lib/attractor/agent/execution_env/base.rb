@@ -8,6 +8,10 @@ module Attractor
           raise NotImplementedError
         end
 
+        def read_file_raw(path)
+          raise NotImplementedError
+        end
+
         def write_file(path, content)
           raise NotImplementedError
         end

@@ -27,17 +27,14 @@ module Attractor
           old_str = args['old_string']
           new_str = args['new_string']
 
-          full_path = File.expand_path(path, env.working_directory)
-          raise ToolExecutionError, "File not found: #{path}" unless File.exist?(full_path)
-
-          content = File.read(full_path)
+          content = env.read_file_raw(path)
           count = content.scan(old_str).length
 
           raise ToolExecutionError, "String not found in #{path}" if count.zero?
           raise ToolExecutionError, "String found #{count} times in #{path}, must be unique" if count > 1
 
           new_content = content.sub(old_str, new_str)
-          File.write(full_path, new_content)
+          env.write_file(path, new_content)
           "File edited: #{path}"
         end
       end

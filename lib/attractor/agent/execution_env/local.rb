@@ -24,6 +24,13 @@ module Attractor
           lines.each_with_index.map { |line, i| "#{i + 1}\t#{line}" }.join
         end
 
+        def read_file_raw(path)
+          full = resolve(path)
+          raise ToolExecutionError, "File not found: #{path}" unless File.exist?(full)
+
+          File.read(full)
+        end
+
         def write_file(path, content)
           full = resolve(path)
           FileUtils.mkdir_p(File.dirname(full))
